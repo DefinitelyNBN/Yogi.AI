@@ -15,12 +15,10 @@ import { useToast } from "@/hooks/use-toast";
 
 // App-specific imports
 import { getAudioFeedback, getYogaPlan } from '@/app/actions';
-import { POSES, PoseName, PoseData } from '@/lib/pose-constants';
+import { POSES, PoseName, Keypoint } from '@/lib/pose-constants';
 import { drawKeypoints, drawSkeleton } from '@/lib/canvas-drawer';
 import { analyzePose } from '@/lib/pose-analyzer';
 import { CheckCircle, Info, Loader, Video, VideoOff, Volume2 } from 'lucide-react';
-
-type PoseLandmarker = any;
 
 const VIDEO_WIDTH = 640;
 const VIDEO_HEIGHT = 480;
@@ -31,7 +29,6 @@ export function YogiAiClient() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameId = useRef<number>(0);
-  const detectorRef = useRef<PoseLandmarker | null>(null);
 
   // State management
   const [appState, setAppState] = useState<'loading' | 'ready' | 'detecting' | 'error'>('loading');
@@ -50,7 +47,7 @@ export function YogiAiClient() {
   const loadPoseLandmarker = useCallback(async () => {
     try {
       const vision = await FilesetResolver.forVisionTasks(
-        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
+        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22-rc.20250304/wasm"
       );
       const newPoseLandmarker = await PoseLandmarker.createFromOptions(vision, {
         baseOptions: {
@@ -71,10 +68,10 @@ export function YogiAiClient() {
   }, []);
 
   useEffect(() => {
-    if (appState === 'loading') {
+    if (appState === 'loading' && !poseLandmarker) {
       loadPoseLandmarker();
     }
-  }, [appState, loadPoseLandmarker]);
+  }, [appState, loadPoseLandmarker, poseLandmarker]);
 
   const stopWebcam = () => {
     if (videoRef.current && videoRef.current.srcObject) {
@@ -86,6 +83,12 @@ export function YogiAiClient() {
     }
     setAppState('ready');
     setHasCameraPermission(false);
+    const canvas = canvasRef.current;
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      ctx?.clearRect(0, 0, canvas.width, canvas.height);
+    }
+    setFeedbackList([]);
   };
 
   const startWebcam = async () => {
@@ -135,20 +138,16 @@ export function YogiAiClient() {
         const keypoints = landmarkResults.landmarks[0].map((landmark, i) => ({
             x: landmark.x * VIDEO_WIDTH,
             y: landmark.y * VIDEO_HEIGHT,
+            z: landmark.z,
             score: landmark.visibility ?? 0,
-            name: poseLandmarker.getPoseLandmarkerOptions().baseOptions?.modelAssetPath?.includes('lite') ? 'lite' : 'full' // Placeholder name
+            name: `keypoint_${i}` // Temporary name, analyzer will use indices
         }));
 
-        const poseData: PoseData = {
-          keypoints,
-          score: keypoints.reduce((acc, kp) => acc + kp.score, 0) / keypoints.length,
-        };
-
-        drawKeypoints(poseData.keypoints, 0.3, ctx, 1);
-        drawSkeleton(poseData.keypoints, 0.3, ctx, 1);
+        drawKeypoints(keypoints, 0.3, ctx);
+        drawSkeleton(keypoints, 0.3, ctx);
         
         if (selectedPose) {
-          const newFeedback = analyzePose(poseData, selectedPose);
+          const newFeedback = analyzePose(keypoints, selectedPose);
           setFeedbackList(currentFeedback => {
              if (JSON.stringify(currentFeedback) !== JSON.stringify(newFeedback)) {
                 return newFeedback;
@@ -213,7 +212,6 @@ export function YogiAiClient() {
 
   useEffect(() => {
     if (feedbackList.length > 0 && selectedPose) {
-        const feedbackText = feedbackList.join(' ');
         // Debounce or logic to prevent spamming audio
         const timeoutId = setTimeout(() => {
              // Only play "good" feedback occasionally
@@ -328,7 +326,7 @@ export function YogiAiClient() {
                     {appState === 'detecting' ? (
                         <Button variant="destructive" onClick={stopWebcam}><VideoOff className="mr-2 h-4 w-4" />Stop Webcam</Button>
                     ) : (
-                        <Button onClick={startWebcam} disabled={appState === 'loading'}><Video className="mr-2 h-4 w-4" />Start Webcam</Button>
+                        <Button onClick={startWebcam} disabled={appState === 'loading' || !poseLandmarker}><Video className="mr-2 h-4 w-4" />Start Webcam</Button>
                     )}
                 </CardFooter>
            </Card>

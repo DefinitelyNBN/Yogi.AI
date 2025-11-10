@@ -1,4 +1,4 @@
-import { POSE_CONFIG, Keypoint, PoseData, PoseName } from './pose-constants';
+import { POSE_CONFIG, Keypoint, PoseName } from './pose-constants';
 
 function calculateAngle(p1: Keypoint, p2: Keypoint, p3: Keypoint): number {
   if (!p1 || !p2 || !p3) return 0;
@@ -12,25 +12,23 @@ function calculateAngle(p1: Keypoint, p2: Keypoint, p3: Keypoint): number {
   return angle;
 }
 
-function findKeypoint(keypoints: Keypoint[], name: string): Keypoint | undefined {
-  return keypoints.find(kp => kp.name === name);
-}
 
-export function analyzePose(pose: PoseData, poseName: PoseName): string[] {
+export function analyzePose(keypoints: Keypoint[], poseName: PoseName): string[] {
   const feedback: string[] = [];
   const targetAngles = POSE_CONFIG[poseName];
 
-  if (!targetAngles || pose.score < 0.3) {
+  const poseScore = keypoints.reduce((acc, kp) => acc + (kp.score ?? 0), 0) / keypoints.length;
+  if (!targetAngles || poseScore < 0.3) {
     return ["Please position yourself clearly in the frame."];
   }
 
   for (const joint in targetAngles) {
     const config = targetAngles[joint];
-    const p1 = findKeypoint(pose.keypoints, config.p1);
-    const p2 = findKeypoint(pose.keypoints, config.p2);
-    const p3 = findKeypoint(pose.keypoints, config.p3);
+    const p1 = keypoints[config.p1];
+    const p2 = keypoints[config.p2];
+    const p3 = keypoints[config.p3];
 
-    if (p1 && p2 && p3 && p1.score > 0.3 && p2.score > 0.3 && p3.score > 0.3) {
+    if (p1 && p2 && p3 && (p1.score ?? 0) > 0.3 && (p2.score ?? 0) > 0.3 && (p3.score ?? 0) > 0.3) {
       const angle = calculateAngle(p1, p2, p3);
       
       if (angle < config.target - config.tolerance) {
