@@ -23,6 +23,9 @@ import { CheckCircle, Info, Loader, Video, VideoOff, Volume2 } from 'lucide-reac
 const VIDEO_WIDTH = 640;
 const VIDEO_HEIGHT = 480;
 
+type AppState = 'loading_model' | 'requesting_permission' | 'permission_denied' | 'ready' | 'detecting' | 'error';
+
+
 export function YogiAiClient() {
   const { toast } = useToast();
   // Refs for DOM elements and detection loop
@@ -32,7 +35,7 @@ export function YogiAiClient() {
   const audioQueueRef = useRef<string[]>([]);
 
   // State management
-  const [appState, setAppState] = useState<'loading' | 'ready' | 'detecting' | 'error'>('loading');
+  const [appState, setAppState] = useState<AppState>('loading_model');
   const [loadingMessage, setLoadingMessage] = useState('Loading AI Model...');
   const [errorMessage, setErrorMessage] = useState('');
   const [selectedPose, setSelectedPose] = useState<PoseName | null>(null);
@@ -44,31 +47,60 @@ export function YogiAiClient() {
   const [hasCameraPermission, setHasCameraPermission] = useState(false);
   const [poseLandmarker, setPoseLandmarker] = useState<PoseLandmarker | null>(null);
 
-  useEffect(() => {
-    async function loadPoseLandmarker() {
-      try {
-        const vision = await FilesetResolver.forVisionTasks(
-            "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm"
-        );
-        const newPoseLandmarker = await PoseLandmarker.createFromOptions(vision, {
-          baseOptions: {
-            modelAssetPath: `https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task`,
-            delegate: "GPU",
-          },
-          runningMode: "VIDEO",
-          numPoses: 1
-        });
-        setPoseLandmarker(newPoseLandmarker);
-        setLoadingMessage('AI Model Loaded.');
-        setAppState('ready');
-      } catch (error) {
-        console.error('Error loading PoseLandmarker model:', error);
-        setErrorMessage('Failed to load the AI model. Please refresh the page.');
-        setAppState('error');
-      }
+  const initApp = useCallback(async () => {
+    try {
+      setAppState('loading_model');
+      setLoadingMessage('Loading AI model...');
+      const vision = await FilesetResolver.forVisionTasks(
+        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm"
+      );
+      const newPoseLandmarker = await PoseLandmarker.createFromOptions(vision, {
+        baseOptions: {
+          modelAssetPath: `https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task`,
+          delegate: "GPU",
+        },
+        runningMode: "VIDEO",
+        numPoses: 1
+      });
+      setPoseLandmarker(newPoseLandmarker);
+      setLoadingMessage('AI Model Loaded.');
+      setAppState('ready');
+    } catch (error) {
+      console.error('Error loading PoseLandmarker model:', error);
+      setErrorMessage('Failed to load the AI model. Please refresh the page.');
+      setAppState('error');
     }
-    loadPoseLandmarker();
   }, []);
+
+  const getCameraPermission = useCallback(async () => {
+    setAppState('requesting_permission');
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { width: VIDEO_WIDTH, height: VIDEO_HEIGHT } 
+      });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.addEventListener('loadeddata', () => {
+            setHasCameraPermission(true);
+            setAppState('detecting');
+        });
+      }
+    } catch (error) {
+      console.error('Error accessing camera:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Camera Access Denied',
+        description: 'Please enable camera permissions in your browser settings.',
+      });
+      setHasCameraPermission(false);
+      setAppState('permission_denied');
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    initApp();
+  }, [initApp]);
+
   
   const stopWebcam = useCallback(() => {
     if (videoRef.current && videoRef.current.srcObject) {
@@ -89,39 +121,7 @@ export function YogiAiClient() {
   }, []);
 
   const startWebcam = async () => {
-    if (!poseLandmarker) {
-      toast({
-        title: "Model not ready",
-        description: "The AI model is still loading. Please wait a moment.",
-        variant: "destructive"
-      });
-      return;
-    }
-    setAppState('loading');
-    setLoadingMessage('Accessing Webcam...');
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { width: VIDEO_WIDTH, height: VIDEO_HEIGHT },
-        });
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          videoRef.current.addEventListener('loadeddata', () => {
-            setHasCameraPermission(true);
-            setAppState('detecting');
-          });
-        }
-      } catch (error) {
-        console.error('Error accessing webcam:', error);
-        setErrorMessage('Could not access webcam. Please allow camera permissions.');
-        setAppState('error');
-        setHasCameraPermission(false);
-      }
-    } else {
-        setErrorMessage('Your browser does not support webcam access.');
-        setAppState('error');
-        setHasCameraPermission(false);
-    }
+    await getCameraPermission();
   };
 
   const detectPoseLoop = useCallback(() => {
@@ -282,6 +282,8 @@ export function YogiAiClient() {
     }
   };
 
+  const isUIDisabled = appState === 'loading_model' || appState === 'requesting_permission';
+
 
   return (
     <div className="container mx-auto p-4">
@@ -299,7 +301,7 @@ export function YogiAiClient() {
                 </CardHeader>
                 <CardContent>
                     <div className="relative w-full aspect-video bg-secondary rounded-lg flex items-center justify-center">
-                    {appState === 'loading' && (
+                    {(appState === 'loading_model' || appState === 'requesting_permission') && (
                         <div className="flex flex-col items-center gap-2 text-muted-foreground">
                             <Loader className="animate-spin h-8 w-8" />
                             <p className="font-medium">{loadingMessage}</p>
@@ -311,41 +313,37 @@ export function YogiAiClient() {
                             <AlertDescription>{errorMessage}</AlertDescription>
                         </Alert>
                     )}
-                    {(appState !== 'loading' && appState !== 'error') && (
-                        <>
-                           <video
-                              id="webcam"
-                              ref={videoRef}
-                              autoPlay
-                              playsInline
-                              muted
-                              className="absolute top-0 left-0 w-full h-full object-cover rounded-lg transform -scale-x-100"
-                              width={VIDEO_WIDTH}
-                              height={VIDEO_HEIGHT}
-                            />
-                            <canvas
-                                id="pose-canvas"
-                                ref={canvasRef}
-                                className="absolute top-0 left-0 w-full h-full transform -scale-x-100"
-                                width={VIDEO_WIDTH}
-                                height={VIDEO_HEIGHT}
-                            />
-                             {!hasCameraPermission && appState === 'ready' && (
-                                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 text-white p-4 text-center rounded-lg">
-                                  <Video className="h-12 w-12 mb-4"/>
-                                  <h3 className="text-lg font-bold">Webcam Disconnected</h3>
-                                  <p className="text-sm">Please start your webcam to begin the session.</p>
-                                </div>
-                            )}
-                        </>
-                    )}
+                     <video
+                        id="webcam"
+                        ref={videoRef}
+                        autoPlay
+                        playsInline
+                        muted
+                        className={`absolute top-0 left-0 w-full h-full object-cover rounded-lg transform -scale-x-100 ${hasCameraPermission ? 'opacity-100' : 'opacity-0'}`}
+                        width={VIDEO_WIDTH}
+                        height={VIDEO_HEIGHT}
+                      />
+                      <canvas
+                          id="pose-canvas"
+                          ref={canvasRef}
+                          className="absolute top-0 left-0 w-full h-full transform -scale-x-100"
+                          width={VIDEO_WIDTH}
+                          height={VIDEO_HEIGHT}
+                      />
+                       {(!hasCameraPermission && (appState === 'ready' || appState === 'permission_denied')) && (
+                          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 text-white p-4 text-center rounded-lg">
+                            <Video className="h-12 w-12 mb-4"/>
+                            <h3 className="text-lg font-bold">Webcam Disconnected</h3>
+                            <p className="text-sm">{appState === 'permission_denied' ? 'Camera access was denied. Please check your browser settings.' : 'Please start your webcam to begin the session.'}</p>
+                          </div>
+                      )}
                     </div>
                 </CardContent>
                  <CardFooter className="flex justify-center gap-4">
-                    {appState === 'detecting' ? (
+                    {hasCameraPermission ? (
                         <Button variant="destructive" onClick={stopWebcam}><VideoOff className="mr-2 h-4 w-4" />Stop Webcam</Button>
                     ) : (
-                        <Button onClick={startWebcam} disabled={appState === 'loading' || !poseLandmarker}><Video className="mr-2 h-4 w-4" />Start Webcam</Button>
+                        <Button onClick={startWebcam} disabled={isUIDisabled}><Video className="mr-2 h-4 w-4" />Start Webcam</Button>
                     )}
                 </CardFooter>
            </Card>
@@ -359,7 +357,7 @@ export function YogiAiClient() {
               <CardDescription>Select a pose to get live feedback.</CardDescription>
             </CardHeader>
             <CardContent>
-              <Select onValueChange={handlePoseSelection} disabled={appState !== 'detecting'}>
+              <Select onValueChange={handlePoseSelection} disabled={!hasCameraPermission}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select a Pose" />
                 </SelectTrigger>
@@ -371,7 +369,7 @@ export function YogiAiClient() {
                 </SelectContent>
               </Select>
               <div id="feedback-box" className="mt-4 space-y-2 text-sm min-h-[100px]">
-                {selectedPose && appState === 'detecting' ? (
+                {selectedPose && hasCameraPermission ? (
                   feedbackList.length > 0 ? (
                     feedbackList.map((item, index) => {
                       const isGood = item.includes('good') || item.includes('perfect');
@@ -387,7 +385,7 @@ export function YogiAiClient() {
                   )
                 ) : (
                    <div className="text-muted-foreground pt-4 text-center">
-                    {appState === 'detecting' ? 'Select a pose for feedback.' : 'Start webcam to begin analysis.'}
+                    {hasCameraPermission ? 'Select a pose for feedback.' : 'Start webcam to begin analysis.'}
                    </div>
                 )}
               </div>
@@ -431,5 +429,3 @@ export function YogiAiClient() {
     </div>
   );
 }
-
-    
