@@ -103,10 +103,10 @@ export function YogiAiClient({ selectedPose, onFeedbackChange }: YogiAiClientPro
           canvasCtx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
           if (landmarkResults.landmarks && landmarkResults.landmarks.length > 0) {
             for (const landmarks of landmarkResults.landmarks) {
-              drawingUtils.drawConnectors(landmarks, PoseLandmarker.POSE_CONNECTIONS, { color: 'hsl(var(--primary))', lineWidth: 2 });
+              drawingUtils.drawConnectors(landmarks, PoseLandmarker.POSE_CONNECTIONS, { color: '#00FF00', lineWidth: 2 });
               drawingUtils.drawLandmarks(landmarks, {
-                  color: 'hsl(var(--primary-foreground))',
-                  fillColor: 'hsl(var(--primary))',
+                  color: '#FF0000',
+                  fillColor: '#FFFFFF',
                   lineWidth: 1,
                   radius: 3,
               });
@@ -153,7 +153,7 @@ export function YogiAiClient({ selectedPose, onFeedbackChange }: YogiAiClientPro
 
 
   return (
-    <Card className="overflow-hidden w-full h-full shadow-lg border-none transition-all duration-300">
+    <Card className="overflow-hidden w-full h-full">
         <CardHeader>
             <CardTitle>Real-time Pose Correction</CardTitle>
             <CardDescription>
@@ -163,7 +163,7 @@ export function YogiAiClient({ selectedPose, onFeedbackChange }: YogiAiClientPro
             </CardDescription>
         </CardHeader>
         <CardContent>
-            <div className="relative w-full aspect-video bg-muted/50 rounded-lg flex items-center justify-center overflow-hidden">
+            <div className="relative w-full aspect-video bg-muted rounded-lg flex items-center justify-center overflow-hidden">
             {appState === 'loading' && (
                 <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 bg-background/80 backdrop-blur-sm">
                     <Loader className="animate-spin h-8 w-8" />
