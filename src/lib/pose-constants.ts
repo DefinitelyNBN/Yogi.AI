@@ -7,12 +7,12 @@ export type Keypoint = {
 };
 
 export const POSES = {
-  Tree: 'Tree',
-  Warrior_II: 'Warrior II',
-  Triangle: 'Triangle',
-  Downward_Dog: 'Downward Dog',
-  Staff: 'Staff Pose',
-  Bound_Angle: 'Bound Angle Pose',
+  Tree: { id: 'Tree', name: 'Tree' },
+  Warrior_II: { id: 'Warrior_II', name: 'Warrior II' },
+  Triangle: { id: 'Triangle', name: 'Triangle' },
+  Downward_Dog: { id: 'Downward_Dog', name: 'Downward Dog' },
+  Staff: { id: 'Staff', name: 'Staff Pose' },
+  Bound_Angle: { id: 'Bound_Angle', name: 'Bound Angle Pose' },
 } as const;
 
 export type PoseName = keyof typeof POSES;

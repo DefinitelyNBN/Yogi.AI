@@ -1,3 +1,40 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "Tree",
+      "description": "A person in Tree Pose, balancing on one leg with the other foot on the inner thigh.",
+      "imageUrl": "https://images.unsplash.com/photo-1688361549335-0dfe2391bdf0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHx5b2dhJTIwdHJlZXxlbnwwfHx8fDE3NjI4MzIyNjR8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "yoga tree"
+    },
+    {
+      "id": "Warrior_II",
+      "description": "A person in Warrior II Pose, with legs in a wide stance, front knee bent, and arms extended.",
+      "imageUrl": "https://images.unsplash.com/photo-1578264393583-5af080a33c45?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHx5b2dhJTIwd2FycmlvcnxlbnwwfHx8fDE3NjI4MjE5MjR8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "yoga warrior"
+    },
+    {
+      "id": "Triangle",
+      "description": "A person in Triangle Pose, with legs wide apart, one hand on the floor, and the other extended upwards.",
+      "imageUrl": "https://images.unsplash.com/photo-1758274535860-93a116aa7897?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHx5b2dhJTIwdHJpYW5nbGV8ZW58MHx8fHwxNzYyODMyMjY0fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "yoga triangle"
+    },
+    {
+      "id": "Downward_Dog",
+      "description": "A person in Downward-Facing Dog pose, forming an inverted V-shape with their body.",
+      "imageUrl": "https://images.unsplash.com/photo-1667586740881-ee7c59fa998b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHx5b2dhJTIwZG9nfGVufDB8fHx8MTc2MjgzMjI2NHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "yoga dog"
+    },
+    {
+      "id": "Staff",
+      "description": "A person in Staff Pose, sitting on the floor with legs extended straight forward.",
+      "imageUrl": "https://images.unsplash.com/photo-1758599880235-b870108f2b8b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHx5b2dhJTIwc2l0dGluZ3xlbnwwfHx8fDE3NjI4MzIyNjR8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "yoga sitting"
+    },
+    {
+      "id": "Bound_Angle",
+      "description": "A person in Bound Angle Pose, sitting with the soles of the feet together.",
+      "imageUrl": "https://images.unsplash.com/photo-1709251744173-55694118c863?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8eW9nYSUyMGJ1dHRlcmZseXxlbnwwfHx8fDE3NjI4MzIyNjR8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "yoga butterfly"
+    }
+  ]
 }

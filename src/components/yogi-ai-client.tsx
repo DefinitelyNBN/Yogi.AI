@@ -1,8 +1,11 @@
 'use client';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import Image from 'next/image';
+
 
 // TensorFlow and MediaPipe imports
 import { FilesetResolver, PoseLandmarker, DrawingUtils } from '@mediapipe/tasks-vision';
+
 
 // UI Components
 import { Button } from '@/components/ui/button';
@@ -18,6 +21,7 @@ import { getAudioFeedback, getYogaPlan } from '@/app/actions';
 import { POSES, PoseName, Keypoint } from '@/lib/pose-constants';
 import { analyzePose } from '@/lib/pose-analyzer';
 import { CheckCircle, Info, Loader, Video, VideoOff, Volume2 } from 'lucide-react';
+import { PlaceHolderImages, ImagePlaceholder } from '@/lib/placeholder-images';
 
 const VIDEO_WIDTH = 640;
 const VIDEO_HEIGHT = 480;
@@ -39,6 +43,7 @@ export function YogiAiClient() {
   const [errorMessage, setErrorMessage] = useState('');
   const [hasCameraPermission, setHasCameraPermission] = useState(false);
   const [selectedPose, setSelectedPose] = useState<PoseName | null>(null);
+  const [selectedPoseImage, setSelectedPoseImage] = useState<ImagePlaceholder | null>(null);
   const [feedbackList, setFeedbackList] = useState<string[]>([]);
   const [goal, setGoal] = useState<string>('');
   const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
@@ -257,9 +262,12 @@ export function YogiAiClient() {
   const handlePoseSelection = (poseKey: string) => {
     if (poseKey === 'none') {
         setSelectedPose(null);
+        setSelectedPoseImage(null);
         setFeedbackList([]);
     } else {
         setSelectedPose(poseKey as PoseName);
+        const image = PlaceHolderImages.find(p => p.id === poseKey) ?? null;
+        setSelectedPoseImage(image);
         setFeedbackList([]);
     }
   };
@@ -344,11 +352,24 @@ export function YogiAiClient() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">None</SelectItem>
-                  {Object.entries(POSES).map(([key, name]) => (
-                    <SelectItem key={key} value={key}>{name}</SelectItem>
+                  {Object.entries(POSES).map(([key, pose]) => (
+                    <SelectItem key={key} value={key}>{pose.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              
+              {selectedPoseImage && (
+                <div className="mt-4 relative aspect-video w-full">
+                  <Image 
+                    src={selectedPoseImage.imageUrl}
+                    alt={`Example of ${POSES[selectedPose as PoseName].name} pose`}
+                    fill
+                    className="rounded-md object-cover"
+                    data-ai-hint={selectedPoseImage.imageHint}
+                  />
+                </div>
+              )}
+
               <div id="feedback-box" className="mt-4 space-y-2 text-sm min-h-[100px]">
                 {selectedPose && hasCameraPermission ? (
                   feedbackList.length > 0 ? (
@@ -366,7 +387,8 @@ export function YogiAiClient() {
                   )
                 ) : (
                    <div className="text-muted-foreground pt-4 text-center">
-                    {hasCameraPermission ? 'Select a pose for feedback.' : 'Grant camera access to begin analysis.'}
+                    { !selectedPose && hasCameraPermission ? 'Select a pose for feedback.' : ''}
+                    { !hasCameraPermission && 'Grant camera access to begin analysis.' }
                    </div>
                 )}
               </div>
