@@ -6,6 +6,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from "@/hooks/use-toast";
 import { Keypoint, PoseName } from '@/lib/pose-constants';
 import { analyzePose } from '@/lib/pose-analyzer';
+import { getAudioFeedback } from '@/app/actions';
 import { Loader, Video, VideoOff } from 'lucide-react';
 
 const VIDEO_WIDTH = 640;
@@ -23,6 +24,9 @@ export function YogiAiClient({ selectedPose, onFeedbackChange }: YogiAiClientPro
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameId = useRef<number>(0);
+  const audioQueueRef = useRef<string[]>([]);
+  const isAudioPlaying = useRef(false);
+
   const [appState, setAppState] = useState<AppState>('initial');
   const [loadingMessage, setLoadingMessage] = useState('Loading...');
   const [errorMessage, setErrorMessage] = useState('');
@@ -84,6 +88,44 @@ export function YogiAiClient({ selectedPose, onFeedbackChange }: YogiAiClientPro
     getCameraPermission();
   }, [initApp, toast]);
 
+
+  const playNextInQueue = useCallback(() => {
+    if (audioQueueRef.current.length > 0) {
+      const audioDataUri = audioQueueRef.current.shift();
+      if(audioDataUri){
+        const audio = new Audio(audioDataUri);
+        audio.play().catch(e => console.error("Audio playback failed", e));
+        audio.onended = () => {
+            if(audioQueueRef.current.length === 0){
+                isAudioPlaying.current = false;
+            } else {
+                playNextInQueue();
+            }
+        };
+      }
+    } else {
+        isAudioPlaying.current = false;
+    }
+  }, []);
+
+  const handleAudioFeedback = useCallback(async (text: string) => {
+    try {
+        const result = await getAudioFeedback({ feedbackText: text });
+        if (result.success && result.audioDataUri) {
+            audioQueueRef.current.push(result.audioDataUri);
+            if(!isAudioPlaying.current){
+                isAudioPlaying.current = true;
+                playNextInQueue();
+            }
+        } else {
+            console.error("Failed to get audio feedback:", result.error);
+        }
+    } catch(e) {
+        console.error("Error in getAudioFeedback action", e);
+    }
+  }, [playNextInQueue]);
+
+
   const detectPoseLoop = useCallback(() => {
     if (appState !== 'detecting' || !poseLandmarker || !videoRef.current || !canvasRef.current) return;
 
@@ -126,6 +168,16 @@ export function YogiAiClient({ selectedPose, onFeedbackChange }: YogiAiClientPro
         if (selectedPose) {
           const newFeedback = analyzePose(keypoints as Keypoint[], selectedPose);
           onFeedbackChange(newFeedback);
+
+          const isAllGood = newFeedback.every(f => f.includes('good') || f.includes('perfect'));
+            if (!isAllGood) {
+              newFeedback.forEach(f => {
+                  if(!f.includes('good') && !f.includes('perfect')) {
+                      handleAudioFeedback(f);
+                  }
+              });
+            }
+
         }
       } else {
         if (typeof onFeedbackChange === 'function') {
@@ -134,7 +186,7 @@ export function YogiAiClient({ selectedPose, onFeedbackChange }: YogiAiClientPro
       }
     }
     animationFrameId.current = requestAnimationFrame(detectPoseLoop);
-  }, [appState, selectedPose, poseLandmarker, onFeedbackChange]);
+  }, [appState, selectedPose, poseLandmarker, onFeedbackChange, handleAudioFeedback]);
 
   useEffect(() => {
     if (appState === 'detecting') {
