@@ -153,7 +153,7 @@ export function YogiAiClient({ selectedPose, onFeedbackChange }: YogiAiClientPro
 
 
   return (
-    <Card className="overflow-hidden w-full h-full shadow-lg transition-all duration-300">
+    <Card className="overflow-hidden w-full h-full">
         <CardHeader>
             <CardTitle>Real-time Pose Correction</CardTitle>
             <CardDescription>
@@ -165,9 +165,9 @@ export function YogiAiClient({ selectedPose, onFeedbackChange }: YogiAiClientPro
         <CardContent>
             <div className="relative w-full aspect-video bg-muted/50 rounded-lg flex items-center justify-center overflow-hidden">
             {appState === 'loading' && (
-                <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 bg-background/80 backdrop-blur-sm text-foreground">
+                <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 bg-background/80 backdrop-blur-sm">
                     <Loader className="animate-spin h-8 w-8" />
-                    <p className="font-medium">{loadingMessage}</p>
+                    <p>{loadingMessage}</p>
                 </div>
             )}
             {appState === 'error' && (
@@ -177,10 +177,10 @@ export function YogiAiClient({ selectedPose, onFeedbackChange }: YogiAiClientPro
                 </Alert>
             )}
             {appState === 'permission_denied' && (
-                <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm text-foreground p-4 text-center rounded-lg">
+                <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm p-4 text-center rounded-lg">
                     <VideoOff className="h-12 w-12 mb-4 text-destructive"/>
                     <h3 className="text-lg font-bold">Camera Access Denied</h3>
-                    <p className="text-sm">Please enable camera permissions in your browser settings and refresh the page.</p>
+                    <p>Please enable camera permissions in your browser settings and refresh the page.</p>
                 </div>
             )}
               <video
@@ -189,7 +189,7 @@ export function YogiAiClient({ selectedPose, onFeedbackChange }: YogiAiClientPro
                 playsInline
                 autoPlay
                 muted
-                className={`absolute top-0 left-0 w-full h-full object-cover rounded-lg transform -scale-x-100 transition-opacity duration-500 ${hasCameraPermission ? 'opacity-100' : 'opacity-0'}`}
+                className={`absolute top-0 left-0 w-full h-full object-cover rounded-lg transform -scale-x-100 ${hasCameraPermission ? 'opacity-100' : 'opacity-0'}`}
                 width={VIDEO_WIDTH}
                 height={VIDEO_HEIGHT}
               />
@@ -201,10 +201,10 @@ export function YogiAiClient({ selectedPose, onFeedbackChange }: YogiAiClientPro
                   height={VIDEO_HEIGHT}
               />
                 {!hasCameraPermission && appState !== 'permission_denied' && (
-                  <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm text-foreground p-4 text-center rounded-lg">
+                  <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm p-4 text-center rounded-lg">
                     <Video className="h-12 w-12 mb-4"/>
                     <h3 className="text-lg font-bold">Waiting for Webcam</h3>
-                    <p className="text-sm">Please grant camera access to begin.</p>
+                    <p>Please grant camera access to begin.</p>
                   </div>
               )}
             </div>

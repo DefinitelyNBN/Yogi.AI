@@ -145,14 +145,14 @@ export function SidebarContent({ selectedPose, onPoseSelect, feedbackList, onFee
   return (
     <SidebarContentWrapper>
         <SidebarHeader>
-            <Card className="bg-transparent border-0 shadow-none">
+            <Card>
                 <CardHeader>
                     <CardTitle>Pose Analysis</CardTitle>
                     <CardDescription>Select a pose to get live feedback.</CardDescription>
                 </CardHeader>
                 <CardContent>
                 <Select onValueChange={handlePoseSelection} value={selectedPose || 'none'}>
-                    <SelectTrigger className="transition-all duration-300">
+                    <SelectTrigger>
                     <SelectValue placeholder="Select a Pose" />
                     </SelectTrigger>
                     <SelectContent>
@@ -164,17 +164,16 @@ export function SidebarContent({ selectedPose, onPoseSelect, feedbackList, onFee
                 </Select>
                 
                 {selectedPoseImage && (
-                    <div className="mt-4 space-y-2">
-                    <div className="relative aspect-video w-full overflow-hidden rounded-md">
-                        <Image 
+                    <div className="mt-4">
+                    <Image 
                         src={selectedPoseImage.imageUrl}
                         alt={`Example of ${POSES[selectedPose as PoseName].name} pose`}
-                        fill
-                        className="rounded-md object-cover transition-transform duration-300 hover:scale-105"
+                        width={600}
+                        height={400}
+                        className="rounded-md object-cover"
                         data-ai-hint={selectedPoseImage.imageHint}
-                        />
-                    </div>
-                    <p className="text-sm text-muted-foreground p-2 bg-secondary rounded-md">{selectedPoseImage.description}</p>
+                    />
+                    <p className="text-sm text-muted-foreground mt-2">{selectedPoseImage.description}</p>
                     </div>
                 )}
 
@@ -184,9 +183,9 @@ export function SidebarContent({ selectedPose, onPoseSelect, feedbackList, onFee
                         feedbackList.map((item, index) => {
                         const isGood = item.includes('good') || item.includes('perfect');
                         return (
-                            <div key={index} className={`flex items-center gap-2 p-2 rounded-md transition-all duration-300 ${isGood ? 'bg-green-100 dark:bg-green-900/50' : 'bg-amber-100 dark:bg-amber-900/50'}`}>
+                            <div key={index} className={`flex items-center gap-2 p-2 rounded-md ${isGood ? 'bg-green-100 dark:bg-green-900/50' : 'bg-amber-100 dark:bg-amber-900/50'}`}>
                                 {isGood ? <CheckCircle className="h-4 w-4 text-green-600" /> : <Info className="h-4 w-4 text-amber-600" />}
-                                <span className={`transition-colors duration-300 ${isGood ? 'text-green-800 dark:text-green-300' : 'text-amber-800 dark:text-amber-300'}`}>{item}</span>
+                                <span className={isGood ? 'text-green-800 dark:text-green-300' : 'text-amber-800 dark:text-amber-300'}>{item}</span>
                             </div>
                         );
                         })
@@ -211,7 +210,7 @@ export function SidebarContent({ selectedPose, onPoseSelect, feedbackList, onFee
 
         <SidebarGroup>
           <SidebarGroupContent>
-            <Card className="bg-transparent border-0 shadow-none">
+            <Card>
                 <CardHeader>
                     <CardTitle>Personalized Plan</CardTitle>
                     <CardDescription>Describe your yoga goal and let AI create a plan for you.</CardDescription>
@@ -223,17 +222,16 @@ export function SidebarContent({ selectedPose, onPoseSelect, feedbackList, onFee
                     value={goal}
                     onChange={(e) => setGoal(e.target.value)}
                     disabled={isGeneratingPlan}
-                    className="transition-all duration-300"
                 />
-                <Button onClick={handleGeneratePlan} disabled={isGeneratingPlan} className="w-full transition-all duration-300">
+                <Button onClick={handleGeneratePlan} disabled={isGeneratingPlan} className="w-full">
                     {isGeneratingPlan && <Loader className="mr-2 h-4 w-4 animate-spin" />}
                     Generate My Plan
                 </Button>
                 {isGeneratingPlan && !generatedPlan && <Skeleton className="h-20 w-full" />}
                 {generatedPlan && (
-                    <Alert variant="default" className="bg-primary/10 border-primary/20 transition-all duration-300">
-                    <AlertTitle className="font-bold text-primary">Your New Yoga Plan</AlertTitle>
-                    <AlertDescription className="whitespace-pre-wrap font-code">{generatedPlan}</AlertDescription>
+                    <Alert variant="default">
+                    <AlertTitle className="font-bold">Your New Yoga Plan</AlertTitle>
+                    <AlertDescription className="whitespace-pre-wrap font-mono">{generatedPlan}</AlertDescription>
                     </Alert>
                 )}
                 </CardContent>
