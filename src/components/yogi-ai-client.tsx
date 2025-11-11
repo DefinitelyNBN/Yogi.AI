@@ -153,7 +153,7 @@ export function YogiAiClient({ selectedPose, onFeedbackChange }: YogiAiClientPro
 
 
   return (
-    <Card className="overflow-hidden w-full h-full">
+    <Card className="overflow-hidden w-full h-full shadow-lg border-none transition-all duration-300">
         <CardHeader>
             <CardTitle>Real-time Pose Correction</CardTitle>
             <CardDescription>

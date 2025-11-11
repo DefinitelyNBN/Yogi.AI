@@ -145,7 +145,7 @@ export function SidebarContent({ selectedPose, onPoseSelect, feedbackList, onFee
   return (
     <SidebarContentWrapper>
         <SidebarHeader>
-            <Card>
+            <Card className="bg-transparent shadow-none border-none transition-all duration-300">
                 <CardHeader>
                     <CardTitle>Pose Analysis</CardTitle>
                     <CardDescription>Select a pose to get live feedback.</CardDescription>
@@ -210,7 +210,7 @@ export function SidebarContent({ selectedPose, onPoseSelect, feedbackList, onFee
 
         <SidebarGroup>
           <SidebarGroupContent>
-            <Card>
+            <Card className="bg-transparent shadow-none border-none transition-all duration-300">
                 <CardHeader>
                     <CardTitle>Personalized Plan</CardTitle>
                     <CardDescription>Describe your yoga goal and let AI create a plan for you.</CardDescription>
