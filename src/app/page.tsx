@@ -1,5 +1,4 @@
 
-import { YogiAiClient } from '@/components/yogi-ai-client';
 import { Icons } from '@/components/icons';
 import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset } from '@/components/ui/sidebar';
 import { SidebarContent } from '@/components/sidebar-content';
@@ -23,7 +22,7 @@ export default function Home() {
             </div>
           </header>
           <main className="flex-1">
-            <YogiAiClient />
+            {/* The YogiAiClient is now rendered within SidebarContent */}
           </main>
         </div>
       </SidebarInset>
