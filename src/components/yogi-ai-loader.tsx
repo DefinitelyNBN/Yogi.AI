@@ -8,6 +8,7 @@ export type YogiAiClientProps = {
   selectedPose: PoseName | null;
   poseConfig?: CustomPoseConfig;
   onFeedbackChange: (feedback: string[]) => void;
+  onAccuracyChange: (accuracy: number) => void;
   onBreathingUpdate: (rate: number) => void;
   photoDataUri?: string;
 };

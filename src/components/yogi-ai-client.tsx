@@ -20,11 +20,12 @@ type YogiAiClientProps = {
   selectedPose: string | null;
   poseConfig?: CustomPoseConfig;
   onFeedbackChange: (feedback: string[]) => void;
+  onAccuracyChange: (accuracy: number) => void;
   onBreathingUpdate: (rate: number) => void;
   photoDataUri?: string;
 };
 
-export function YogiAiClient({ selectedPose, poseConfig, onFeedbackChange, onBreathingUpdate, photoDataUri }: YogiAiClientProps) {
+export function YogiAiClient({ selectedPose, poseConfig, onFeedbackChange, onAccuracyChange, onBreathingUpdate, photoDataUri }: YogiAiClientProps) {
   const { toast } = useToast();
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -213,8 +214,9 @@ export function YogiAiClient({ selectedPose, poseConfig, onFeedbackChange, onBre
         analyzeBreathing(keypoints as Keypoint[], startTimeMs);
 
         if (selectedPose && poseConfig) {
-          const newFeedback = analyzePose(keypoints as Keypoint[], poseConfig);
+          const { feedback: newFeedback, accuracy } = analyzePose(keypoints as Keypoint[], poseConfig);
           onFeedbackChange(newFeedback);
+          onAccuracyChange(accuracy);
 
           const isAllGood = newFeedback.every(f => f.includes('good') || f.includes('perfect'));
             if (!isAllGood) {
@@ -230,10 +232,13 @@ export function YogiAiClient({ selectedPose, poseConfig, onFeedbackChange, onBre
         if (typeof onFeedbackChange === 'function') {
           onFeedbackChange([]);
         }
+        if (typeof onAccuracyChange === 'function') {
+            onAccuracyChange(0);
+        }
       }
     }
     animationFrameId.current = requestAnimationFrame(detectPoseLoop);
-  }, [appState, selectedPose, poseConfig, poseLandmarker, onFeedbackChange, handleAudioFeedback, analyzeBreathing]);
+  }, [appState, selectedPose, poseConfig, poseLandmarker, onFeedbackChange, onAccuracyChange, handleAudioFeedback, analyzeBreathing]);
 
   useEffect(() => {
     if (appState === 'detecting') {

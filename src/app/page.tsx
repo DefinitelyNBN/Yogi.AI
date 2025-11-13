@@ -28,6 +28,7 @@ import { POSES, PoseName, POSE_CONFIG, CustomPoseConfig } from '@/lib/pose-const
 import { CheckCircle, Info, Loader, PlusCircle, Trash2, Volume2, Waves } from 'lucide-react';
 import { PlaceHolderImages, ImagePlaceholder } from '@/lib/placeholder-images';
 import { AddPoseForm } from '@/components/add-pose-form';
+import { Progress } from '@/components/ui/progress';
 
 export default function Home() {
   const { toast } = useToast();
@@ -38,6 +39,7 @@ export default function Home() {
   const [selectedPose, setSelectedPose] = useState<PoseName | null>(null);
   const [selectedPoseImage, setSelectedPoseImage] = useState<ImagePlaceholder | null>(null);
   const [feedbackList, setFeedbackList] = useState<string[]>([]);
+  const [poseAccuracy, setPoseAccuracy] = useState(0);
   const [goal, setGoal] = useState('');
   const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
   const [generatedPlan, setGeneratedPlan] = useState('');
@@ -59,12 +61,14 @@ export default function Home() {
       setSelectedPose(null);
       setSelectedPoseImage(null);
       setFeedbackList([]);
+      setPoseAccuracy(0);
     } else {
       const poseName = poseKey as PoseName;
       setSelectedPose(poseName);
       const image = allPoseImages[poseName] || null;
       setSelectedPoseImage(image);
       setFeedbackList([]);
+      setPoseAccuracy(0);
     }
   };
 
@@ -76,6 +80,10 @@ export default function Home() {
        return currentFeedback;
      });
   };
+
+  const handleAccuracyChange = (newAccuracy: number) => {
+    setPoseAccuracy(newAccuracy);
+  }
 
   const handleGeneratePlan = async () => {
     if (!goal.trim()) {
@@ -182,6 +190,7 @@ export default function Home() {
               selectedPose={selectedPose}
               poseConfig={selectedPose ? allPoseConfigs[selectedPose] : undefined}
               onFeedbackChange={handleFeedbackChange}
+              onAccuracyChange={handleAccuracyChange}
               onBreathingUpdate={setBreathingRate}
               photoDataUri={selectedPoseImage?.imageUrl}
             />
@@ -260,6 +269,17 @@ export default function Home() {
                      <p className="text-sm text-muted-foreground mt-2">{selectedPoseImage.description}</p>
                   </div>
                 )}
+                
+                {selectedPose && (
+                  <div className="mt-4 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-muted-foreground">Accuracy</span>
+                        <Progress value={poseAccuracy} className="w-full" />
+                        <span className="text-sm font-bold w-12 text-right">{poseAccuracy.toFixed(0)}%</span>
+                      </div>
+                  </div>
+                )}
+
 
                 <div id="feedback-box" className="mt-4 space-y-2 text-sm min-h-[100px]">
                   {selectedPose ? (
