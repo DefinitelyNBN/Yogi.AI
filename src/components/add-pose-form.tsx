@@ -13,16 +13,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { KEYPOINTS_MAPPING, KeypointName, CustomPoseConfig } from '@/lib/pose-constants';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { PlusCircle, Trash2, Wand2, Loader } from 'lucide-react';
-import { ScrollArea } from './ui/scroll-area';
+import { CustomPoseConfig, KEYPOINTS_MAPPING } from '@/lib/pose-constants';
+import { Loader } from 'lucide-react';
 import { getAIPoseRules } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 
@@ -37,99 +29,22 @@ interface AddPoseFormProps {
   }) => void;
 }
 
-type AngleRule = {
-  id: number;
-  name: string;
-  p1: KeypointName;
-  p2: KeypointName;
-  p3: KeypointName;
-  target: number;
-  tolerance: number;
-  feedback_low: string;
-  feedback_high: string;
-  feedback_good: string;
-};
-
 export function AddPoseForm({ children, onAddPose }: AddPoseFormProps) {
   const { toast } = useToast();
   const [isOpen, setOpen] = useState(false);
   const [poseName, setPoseName] = useState('');
   const [description, setDescription] = useState('');
   const [imageUrl, setImageUrl] = useState('');
-  const [angleRules, setAngleRules] = useState<AngleRule[]>([]);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const keypointOptions = Object.keys(KEYPOINTS_MAPPING) as KeypointName[];
+  const resetForm = () => {
+    setPoseName('');
+    setDescription('');
+    setImageUrl('');
+    setIsSaving(false);
+  }
 
-  const handleAddRule = () => {
-    setAngleRules([
-      ...angleRules,
-      {
-        id: Date.now(),
-        name: `joint_angle_${angleRules.length + 1}`,
-        p1: 'nose', p2: 'left_shoulder', p3: 'left_elbow',
-        target: 180,
-        tolerance: 15,
-        feedback_low: '',
-        feedback_high: '',
-        feedback_good: '',
-      },
-    ]);
-  };
-
-  const handleRemoveRule = (id: number) => {
-    setAngleRules(angleRules.filter(rule => rule.id !== id));
-  };
-
-  const handleRuleChange = (id: number, field: keyof Omit<AngleRule, 'id'>, value: string | number) => {
-    setAngleRules(
-      angleRules.map(rule =>
-        rule.id === id ? { ...rule, [field]: value } : rule
-      )
-    );
-  };
-  
-  const handleGenerateRules = async () => {
-    if (!poseName || !description) {
-      toast({
-        variant: 'destructive',
-        title: 'Missing Information',
-        description: 'Please enter a pose name and description before generating rules.',
-      });
-      return;
-    }
-    setIsGenerating(true);
-    const result = await getAIPoseRules({ poseName, poseDescription: description });
-    if (result.success && result.rules) {
-      const newRules = Object.entries(result.rules).map(([name, rule], index) => ({
-        id: Date.now() + index,
-        name,
-        p1: rule.p1,
-        p2: rule.p2,
-        p3: rule.p3,
-        target: rule.target,
-        tolerance: rule.tolerance,
-        feedback_low: rule.feedback_low,
-        feedback_high: rule.feedback_high,
-        feedback_good: rule.feedback_good,
-      }));
-      setAngleRules(newRules);
-      toast({
-        title: 'AI Rules Generated!',
-        description: 'The analysis rules have been populated. You can now review and edit them.',
-      });
-    } else {
-      toast({
-        variant: 'destructive',
-        title: 'Generation Failed',
-        description: result.error || 'Could not generate rules. Please try again.',
-      });
-    }
-    setIsGenerating(false);
-  };
-
-
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!poseName || !description || !imageUrl) {
         toast({
             variant: "destructive",
@@ -139,8 +54,24 @@ export function AddPoseForm({ children, onAddPose }: AddPoseFormProps) {
         return;
     }
 
-    const config: CustomPoseConfig = angleRules.reduce((acc, rule) => {
-      acc[rule.name] = {
+    setIsSaving(true);
+
+    // Generate rules with AI
+    const aiResult = await getAIPoseRules({ poseName, poseDescription: description });
+
+    if (!aiResult.success || !aiResult.rules) {
+        toast({
+            variant: 'destructive',
+            title: 'AI Generation Failed',
+            description: aiResult.error || 'Could not generate analysis rules. Please try again.',
+        });
+        setIsSaving(false);
+        return;
+    }
+
+    // Convert the AI-generated rules into the CustomPoseConfig format
+    const config: CustomPoseConfig = Object.entries(aiResult.rules).reduce((acc, [name, rule]) => {
+      acc[name] = {
         p1: KEYPOINTS_MAPPING[rule.p1],
         p2: KEYPOINTS_MAPPING[rule.p2],
         p3: KEYPOINTS_MAPPING[rule.p3],
@@ -153,6 +84,7 @@ export function AddPoseForm({ children, onAddPose }: AddPoseFormProps) {
       return acc;
     }, {} as CustomPoseConfig);
 
+
     const newPose = {
       name: poseName,
       id: poseName.replace(/\s+/g, '_').toLowerCase(),
@@ -163,120 +95,49 @@ export function AddPoseForm({ children, onAddPose }: AddPoseFormProps) {
 
     onAddPose(newPose);
     setOpen(false);
-    // Reset form
-    setPoseName('');
-    setDescription('');
-    setImageUrl('');
-    setAngleRules([]);
+    resetForm();
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setOpen}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      if (!open) {
+        resetForm();
+      }
+      setOpen(open)
+    }}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Add Custom Pose</DialogTitle>
           <DialogDescription>
-            Define a new yoga pose by providing its details. Use the AI generator to automatically create analysis rules.
+            Provide the details for a new yoga pose. AI will automatically generate the analysis rules for you.
           </DialogDescription>
         </DialogHeader>
-        <ScrollArea className="max-h-[70vh] p-4">
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="name" className="text-right">
               Pose Name
             </Label>
-            <Input id="name" value={poseName} onChange={(e) => setPoseName(e.target.value)} className="col-span-3" placeholder="e.g., Happy Baby" />
+            <Input id="name" value={poseName} onChange={(e) => setPoseName(e.target.value)} className="col-span-3" placeholder="e.g., Happy Baby" disabled={isSaving}/>
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="description" className="text-right">
               Description
             </Label>
-            <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} className="col-span-3" placeholder="A detailed description of how to perform the pose, its benefits, and key alignment cues." />
+            <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} className="col-span-3" placeholder="A detailed description of how to perform the pose." disabled={isSaving}/>
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="imageUrl" className="text-right">
               Image URL
             </Label>
-            <Input id="imageUrl" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} className="col-span-3" placeholder="https://example.com/image.jpg"/>
-          </div>
-
-          <div className="mt-4">
-            <div className="flex justify-between items-center mb-2">
-                <h4 className="font-semibold">Pose Analysis Rules</h4>
-                 <Button variant="outline" size="sm" onClick={handleGenerateRules} disabled={isGenerating}>
-                    {isGenerating ? <Loader className="mr-2 h-4 w-4 animate-spin"/> : <Wand2 className="mr-2 h-4 w-4" />}
-                    Generate with AI
-                </Button>
-            </div>
-            <div className="space-y-4">
-                {angleRules.map((rule) => (
-                    <div key={rule.id} className="p-4 border rounded-md relative">
-                         <Button variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => handleRemoveRule(rule.id)}>
-                            <Trash2 className="h-4 w-4" />
-                        </Button>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <Label>Rule Name</Label>
-                                <Input value={rule.name} onChange={e => handleRuleChange(rule.id, 'name', e.target.value)} placeholder="e.g., knee_angle" />
-                            </div>
-                             <div>
-                                <Label>Target Angle (°)</Label>
-                                <Input type="number" value={rule.target} onChange={e => handleRuleChange(rule.id, 'target', e.target.value)} />
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-3 gap-2 mt-4">
-                             <div>
-                                <Label>Point 1 (End)</Label>
-                                <Select value={rule.p1} onValueChange={(v: KeypointName) => handleRuleChange(rule.id, 'p1', v)}>
-                                    <SelectTrigger><SelectValue/></SelectTrigger>
-                                    <SelectContent>
-                                        {keypointOptions.map(kp => <SelectItem key={kp} value={kp}>{kp}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div>
-                                <Label>Point 2 (Vertex)</Label>
-                                <Select value={rule.p2} onValueChange={(v: KeypointName) => handleRuleChange(rule.id, 'p2', v)}>
-                                    <SelectTrigger><SelectValue/></SelectTrigger>
-                                    <SelectContent>
-                                        {keypointOptions.map(kp => <SelectItem key={kp} value={kp}>{kp}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div>
-                                <Label>Point 3 (End)</Label>
-                                <Select value={rule.p3} onValueChange={(v: KeypointName) => handleRuleChange(rule.id, 'p3', v)}>
-                                    <SelectTrigger><SelectValue/></SelectTrigger>
-                                    <SelectContent>
-                                        {keypointOptions.map(kp => <SelectItem key={kp} value={kp}>{kp}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4 mt-4">
-                             <div>
-                                <Label>Tolerance (°)</Label>
-                                <Input type="number" value={rule.tolerance} onChange={e => handleRuleChange(rule.id, 'tolerance', e.target.value)} />
-                            </div>
-                        </div>
-                         <div className="mt-4 space-y-2">
-                             <Label>Feedback Messages</Label>
-                             <Input placeholder="Feedback for angle too low" value={rule.feedback_low} onChange={e => handleRuleChange(rule.id, 'feedback_low', e.target.value)} />
-                             <Input placeholder="Feedback for angle too high" value={rule.feedback_high} onChange={e => handleRuleChange(rule.id, 'feedback_high', e.target.value)} />
-                             <Input placeholder="Feedback for good angle" value={rule.feedback_good} onChange={e => handleRuleChange(rule.id, 'feedback_good', e.target.value)} />
-                         </div>
-                    </div>
-                ))}
-            </div>
-            <Button variant="outline" size="sm" onClick={handleAddRule} className="mt-4">
-                <PlusCircle className="mr-2 h-4 w-4" /> Add Rule Manually
-            </Button>
+            <Input id="imageUrl" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} className="col-span-3" placeholder="https://example.com/image.jpg" disabled={isSaving}/>
           </div>
         </div>
-        </ScrollArea>
         <DialogFooter>
-          <Button onClick={handleSubmit}>Save Pose</Button>
+          <Button onClick={handleSubmit} disabled={isSaving}>
+            {isSaving && <Loader className="mr-2 h-4 w-4 animate-spin" />}
+            Save Pose
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
