@@ -1,5 +1,5 @@
 'use server';
-import { generateYogaPlan, GenerateYogaPlanInput } from '@/ai/flows/personalized-yoga-plans';
+import { generateYogaPlan, GenerateYogaPlanInput } from '@/ai/flows/generate-yoga-plan';
 import { audioFeedbackForPoseCorrection, AudioFeedbackForPoseCorrectionInput } from '@/ai/flows/audio-feedback-pose-correction';
 import { generatePoseRules, GeneratePoseRulesInput, GeneratePoseRulesOutput } from '@/ai/flows/generate-pose-rules';
 import { generatePoseImage, GeneratePoseImageInput } from '@/ai/flows/generate-pose-image';

@@ -6,7 +6,7 @@
  * 1.  **Layout Management**: It defines the 2x2 grid structure for the dashboard,
  *     placing the Camera, Pose Analysis, Breathing, and Plan panes in their
  *     respective positions.
- * 2.  **State Management**: It utilizes the `useYogaApp` custom hook to centralize
+ * 2.  **State Management**: It utilizes the `useYogaDashboard` custom hook to centralize
  *     all application state and logic. This keeps the component clean and focused
  *     on rendering the layout.
  * 3.  **Component Integration**: It imports and renders the individual pane components,
@@ -15,16 +15,16 @@
 'use client';
 import React from 'react';
 import { Icons } from '@/components/icons';
-import { useYogaApp } from '@/hooks/use-yoga-app';
+import { useYogaDashboard } from '@/hooks/use-yoga-dashboard';
 import { CameraPane } from '@/components/layout/CameraPane';
 import { PoseAnalysisPane } from '@/components/layout/PoseAnalysisPane';
 import { BreathingPane } from '@/components/layout/BreathingPane';
 import { PlanPane } from '@/components/layout/PlanPane';
 
 export default function Home() {
-  // The useYogaApp hook provides all the state and functions needed by the UI.
+  // The useYogaDashboard hook provides all the state and functions needed by the UI.
   // This keeps the main page component clean and focused on layout.
-  const yogaApp = useYogaApp();
+  const yogaApp = useYogaDashboard();
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
