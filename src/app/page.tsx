@@ -183,6 +183,7 @@ export default function Home() {
               poseConfig={selectedPose ? allPoseConfigs[selectedPose] : undefined}
               onFeedbackChange={handleFeedbackChange}
               onBreathingUpdate={setBreathingRate}
+              photoDataUri={selectedPoseImage?.imageUrl}
             />
           </div>
           <div className="space-y-8">
@@ -347,5 +348,3 @@ export default function Home() {
     </div>
   );
 }
-
-    

@@ -15,7 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { CustomPoseConfig, KEYPOINTS_MAPPING } from '@/lib/pose-constants';
 import { Loader } from 'lucide-react';
-import { getAIPoseRules } from '@/app/actions';
+import { getAIPoseRules, getAIPoseImage } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 
 interface AddPoseFormProps {
@@ -36,28 +36,52 @@ export function AddPoseForm({ children, onAddPose }: AddPoseFormProps) {
   const [description, setDescription] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [savingStep, setSavingStep] = useState('');
 
   const resetForm = () => {
     setPoseName('');
     setDescription('');
     setImageUrl('');
     setIsSaving(false);
+    setSavingStep('');
   }
 
   const handleSubmit = async () => {
-    if (!poseName || !description || !imageUrl) {
+    if (!poseName || !description) {
         toast({
             variant: "destructive",
             title: "Missing fields",
-            description: "Please fill out the pose name, description, and image URL."
+            description: "Please fill out the pose name and description."
         })
         return;
     }
 
     setIsSaving(true);
+    
+    let finalImageUrl = imageUrl;
+    let photoDataUri: string | undefined = imageUrl;
 
-    // Generate rules with AI
-    const aiResult = await getAIPoseRules({ poseName, poseDescription: description });
+    // Step 1: Generate image if URL is not provided
+    if (!finalImageUrl) {
+        setSavingStep('Generating image...');
+        const imageResult = await getAIPoseImage({ poseName, poseDescription: description });
+        if (!imageResult.success || !imageResult.imageUrl) {
+            toast({
+                variant: 'destructive',
+                title: 'AI Image Generation Failed',
+                description: imageResult.error || 'Could not generate an image for this pose. Please try providing an image URL.',
+            });
+            setIsSaving(false);
+            return;
+        }
+        finalImageUrl = imageResult.imageUrl;
+        photoDataUri = imageResult.imageUrl;
+    }
+
+
+    // Step 2: Generate rules with AI
+    setSavingStep('Generating rules...');
+    const aiResult = await getAIPoseRules({ poseName, poseDescription: description, photoDataUri });
 
     if (!aiResult.success || !aiResult.rules) {
         toast({
@@ -89,7 +113,7 @@ export function AddPoseForm({ children, onAddPose }: AddPoseFormProps) {
       name: poseName,
       id: poseName.replace(/\s+/g, '_').toLowerCase(),
       description,
-      imageUrl,
+      imageUrl: finalImageUrl,
       config,
     };
 
@@ -130,13 +154,13 @@ export function AddPoseForm({ children, onAddPose }: AddPoseFormProps) {
             <Label htmlFor="imageUrl" className="text-right">
               Image URL
             </Label>
-            <Input id="imageUrl" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} className="col-span-3" placeholder="https://example.com/image.jpg" disabled={isSaving}/>
+            <Input id="imageUrl" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} className="col-span-3" placeholder="(Optional) AI will generate one if left blank." disabled={isSaving}/>
           </div>
         </div>
         <DialogFooter>
           <Button onClick={handleSubmit} disabled={isSaving}>
             {isSaving && <Loader className="mr-2 h-4 w-4 animate-spin" />}
-            Save Pose
+            {isSaving ? savingStep : 'Save Pose'}
           </Button>
         </DialogFooter>
       </DialogContent>

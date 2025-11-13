@@ -2,6 +2,7 @@
 import { generateYogaPlan, GenerateYogaPlanInput } from '@/ai/flows/personalized-yoga-plans';
 import { audioFeedbackForPoseCorrection, AudioFeedbackForPoseCorrectionInput } from '@/ai/flows/audio-feedback-pose-correction';
 import { generatePoseRules, GeneratePoseRulesInput, GeneratePoseRulesOutput } from '@/ai/flows/generate-pose-rules';
+import { generatePoseImage, GeneratePoseImageInput } from '@/ai/flows/generate-pose-image';
 
 export async function getYogaPlan(input: GenerateYogaPlanInput) {
     try {
@@ -30,5 +31,15 @@ export async function getAIPoseRules(input: GeneratePoseRulesInput): Promise<{ s
     } catch (error) {
         console.error('Error generating AI pose rules:', error);
         return { success: false, error: 'Failed to generate AI rules. Please try again.' };
+    }
+}
+
+export async function getAIPoseImage(input: GeneratePoseImageInput): Promise<{ success: boolean, imageUrl?: string, error?: string }> {
+    try {
+        const result = await generatePoseImage(input);
+        return { success: true, imageUrl: result.imageUrl };
+    } catch (error) {
+        console.error('Error generating AI pose image:', error);
+        return { success: false, error: 'Failed to generate AI image. Please try again.' };
     }
 }

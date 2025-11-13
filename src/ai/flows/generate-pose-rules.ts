@@ -16,6 +16,9 @@ const keypointNames = Object.keys(KEYPOINTS_MAPPING) as [string, ...string[]];
 const GeneratePoseRulesInputSchema = z.object({
   poseName: z.string().describe('The name of the yoga pose.'),
   poseDescription: z.string().describe('A detailed description of how to perform the yoga pose.'),
+  photoDataUri: z.string().optional().describe(
+    "An optional photo of the pose as a data URI. Format: 'data:<mimetype>;base64,<encoded_data>'."
+  ),
 });
 export type GeneratePoseRulesInput = z.infer<typeof GeneratePoseRulesInputSchema>;
 
@@ -46,6 +49,12 @@ const prompt = ai.definePrompt({
   input: { schema: GeneratePoseRulesInputSchema },
   output: { schema: GeneratePoseRulesOutputSchema },
   prompt: `You are a world-class yoga instructor and AI expert. Your task is to analyze a description of a yoga pose and generate a set of rules for real-time pose correction.
+{{#if photoDataUri}}
+Use both the user's description and the provided photo as the primary source of information. The photo is the reference for the ideal pose.
+Photo: {{media url=photoDataUri}}
+{{else}}
+Use the user's description as the primary source of information.
+{{/if}}
 
 The user has provided the name and description of a pose. Based on this, generate between 2 and 4 key angle rules to analyze the pose correctly.
 

@@ -21,9 +21,10 @@ type YogiAiClientProps = {
   poseConfig?: CustomPoseConfig;
   onFeedbackChange: (feedback: string[]) => void;
   onBreathingUpdate: (rate: number) => void;
+  photoDataUri?: string;
 };
 
-export function YogiAiClient({ selectedPose, poseConfig, onFeedbackChange, onBreathingUpdate }: YogiAiClientProps) {
+export function YogiAiClient({ selectedPose, poseConfig, onFeedbackChange, onBreathingUpdate, photoDataUri }: YogiAiClientProps) {
   const { toast } = useToast();
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
