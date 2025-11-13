@@ -25,7 +25,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Icons } from '@/components/icons';
 import { POSES, PoseName, POSE_CONFIG, CustomPoseConfig } from '@/lib/pose-constants';
-import { CheckCircle, Info, Loader, PlusCircle, Volume2, Waves } from 'lucide-react';
+import { CheckCircle, Info, Loader, PlusCircle, Trash2, Volume2, Waves } from 'lucide-react';
 import { PlaceHolderImages, ImagePlaceholder } from '@/lib/placeholder-images';
 import { AddPoseForm } from '@/components/add-pose-form';
 
@@ -45,10 +45,13 @@ export default function Home() {
 
   const allPoses = { ...POSES, ...userPoses };
   const allPoseConfigs = { ...POSE_CONFIG, ...userPoseConfigs };
-  const allPoseImages = PlaceHolderImages.reduce((acc, img) => {
-    acc[img.id] = img;
-    return acc;
-  }, {} as Record<string, ImagePlaceholder>);
+  const allPoseImages = {
+    ...PlaceHolderImages.reduce((acc, img) => {
+        acc[img.id] = img;
+        return acc;
+      }, {} as Record<string, ImagePlaceholder>),
+    ...userPoseImages,
+  };
 
 
   const handlePoseSelection = (poseKey: string) => {
@@ -59,8 +62,7 @@ export default function Home() {
     } else {
       const poseName = poseKey as PoseName;
       setSelectedPose(poseName);
-
-      const image = userPoseImages[poseName] || allPoseImages[poseName] || null;
+      const image = allPoseImages[poseName] || null;
       setSelectedPoseImage(image);
       setFeedbackList([]);
     }
@@ -126,6 +128,41 @@ export default function Home() {
     // Automatically select the new pose
     handlePoseSelection(id);
   };
+  
+  const handleRemovePose = (poseIdToRemove: string) => {
+    // Prevent removing default poses
+    if (POSES[poseIdToRemove as keyof typeof POSES]) {
+      return;
+    }
+
+    const poseName = userPoses[poseIdToRemove]?.name || 'The pose';
+
+    setUserPoses(prev => {
+        const next = {...prev};
+        delete next[poseIdToRemove];
+        return next;
+    });
+    setUserPoseConfigs(prev => {
+        const next = {...prev};
+        delete next[poseIdToRemove];
+        return next;
+    });
+    setUserPoseImages(prev => {
+        const next = {...prev};
+        delete next[poseIdToRemove];
+        return next;
+    });
+    
+    // If the removed pose was selected, reset selection
+    if (selectedPose === poseIdToRemove) {
+      handlePoseSelection('none');
+    }
+
+    toast({
+        title: "Pose Removed",
+        description: `${poseName} has been removed from your library.`
+    })
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -178,7 +215,24 @@ export default function Home() {
                       <SelectItem value="none">None</SelectItem>
                       {Object.entries(allPoses).map(([key, pose]) => (
                         <SelectItem key={key} value={key}>
-                          {pose.name}
+                          <div className="flex items-center justify-between w-full">
+                            <span>{pose.name}</span>
+                            {userPoses[key] && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 ml-4 hover:bg-destructive/20"
+                                onClick={(e) => {
+                                  e.stopPropagation(); // Prevent dropdown from closing
+                                  e.preventDefault(); // Prevent selection
+                                  handleRemovePose(key);
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                                <span className="sr-only">Remove {pose.name}</span>
+                              </Button>
+                            )}
+                          </div>
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -293,3 +347,5 @@ export default function Home() {
     </div>
   );
 }
+
+    
