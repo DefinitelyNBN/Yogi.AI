@@ -21,8 +21,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { PlusCircle, Trash2 } from 'lucide-react';
+import { PlusCircle, Trash2, Wand2, Loader } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
+import { getAIPoseRules } from '@/app/actions';
+import { useToast } from '@/hooks/use-toast';
 
 interface AddPoseFormProps {
   children: React.ReactNode;
@@ -49,11 +51,13 @@ type AngleRule = {
 };
 
 export function AddPoseForm({ children, onAddPose }: AddPoseFormProps) {
+  const { toast } = useToast();
   const [isOpen, setOpen] = useState(false);
   const [poseName, setPoseName] = useState('');
   const [description, setDescription] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [angleRules, setAngleRules] = useState<AngleRule[]>([]);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const keypointOptions = Object.keys(KEYPOINTS_MAPPING) as KeypointName[];
 
@@ -84,10 +88,54 @@ export function AddPoseForm({ children, onAddPose }: AddPoseFormProps) {
       )
     );
   };
+  
+  const handleGenerateRules = async () => {
+    if (!poseName || !description) {
+      toast({
+        variant: 'destructive',
+        title: 'Missing Information',
+        description: 'Please enter a pose name and description before generating rules.',
+      });
+      return;
+    }
+    setIsGenerating(true);
+    const result = await getAIPoseRules({ poseName, poseDescription: description });
+    if (result.success && result.rules) {
+      const newRules = Object.entries(result.rules).map(([name, rule], index) => ({
+        id: Date.now() + index,
+        name,
+        p1: rule.p1,
+        p2: rule.p2,
+        p3: rule.p3,
+        target: rule.target,
+        tolerance: rule.tolerance,
+        feedback_low: rule.feedback_low,
+        feedback_high: rule.feedback_high,
+        feedback_good: rule.feedback_good,
+      }));
+      setAngleRules(newRules);
+      toast({
+        title: 'AI Rules Generated!',
+        description: 'The analysis rules have been populated. You can now review and edit them.',
+      });
+    } else {
+      toast({
+        variant: 'destructive',
+        title: 'Generation Failed',
+        description: result.error || 'Could not generate rules. Please try again.',
+      });
+    }
+    setIsGenerating(false);
+  };
+
 
   const handleSubmit = () => {
     if (!poseName || !description || !imageUrl) {
-        // Maybe show a toast here later
+        toast({
+            variant: "destructive",
+            title: "Missing fields",
+            description: "Please fill out the pose name, description, and image URL."
+        })
         return;
     }
 
@@ -107,7 +155,7 @@ export function AddPoseForm({ children, onAddPose }: AddPoseFormProps) {
 
     const newPose = {
       name: poseName,
-      id: poseName.replace(/\s+/g, '_'),
+      id: poseName.replace(/\s+/g, '_').toLowerCase(),
       description,
       imageUrl,
       config,
@@ -129,7 +177,7 @@ export function AddPoseForm({ children, onAddPose }: AddPoseFormProps) {
         <DialogHeader>
           <DialogTitle>Add Custom Pose</DialogTitle>
           <DialogDescription>
-            Define a new yoga pose by providing its details and analysis rules.
+            Define a new yoga pose by providing its details. Use the AI generator to automatically create analysis rules.
           </DialogDescription>
         </DialogHeader>
         <ScrollArea className="max-h-[70vh] p-4">
@@ -144,7 +192,7 @@ export function AddPoseForm({ children, onAddPose }: AddPoseFormProps) {
             <Label htmlFor="description" className="text-right">
               Description
             </Label>
-            <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} className="col-span-3" placeholder="How to perform the pose." />
+            <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} className="col-span-3" placeholder="A detailed description of how to perform the pose, its benefits, and key alignment cues." />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="imageUrl" className="text-right">
@@ -154,7 +202,13 @@ export function AddPoseForm({ children, onAddPose }: AddPoseFormProps) {
           </div>
 
           <div className="mt-4">
-            <h4 className="font-semibold mb-2">Pose Analysis Rules</h4>
+            <div className="flex justify-between items-center mb-2">
+                <h4 className="font-semibold">Pose Analysis Rules</h4>
+                 <Button variant="outline" size="sm" onClick={handleGenerateRules} disabled={isGenerating}>
+                    {isGenerating ? <Loader className="mr-2 h-4 w-4 animate-spin"/> : <Wand2 className="mr-2 h-4 w-4" />}
+                    Generate with AI
+                </Button>
+            </div>
             <div className="space-y-4">
                 {angleRules.map((rule) => (
                     <div key={rule.id} className="p-4 border rounded-md relative">
@@ -166,19 +220,15 @@ export function AddPoseForm({ children, onAddPose }: AddPoseFormProps) {
                                 <Label>Rule Name</Label>
                                 <Input value={rule.name} onChange={e => handleRuleChange(rule.id, 'name', e.target.value)} placeholder="e.g., knee_angle" />
                             </div>
-                            <div>
+                             <div>
                                 <Label>Target Angle (°)</Label>
                                 <Input type="number" value={rule.target} onChange={e => handleRuleChange(rule.id, 'target', e.target.value)} />
-                            </div>
-                            <div>
-                                <Label>Tolerance (°)</Label>
-                                <Input type="number" value={rule.tolerance} onChange={e => handleRuleChange(rule.id, 'tolerance', e.target.value)} />
                             </div>
                         </div>
                         <div className="grid grid-cols-3 gap-2 mt-4">
                              <div>
-                                <Label>Point 1 (p1)</Label>
-                                <Select value={rule.p1} onValueChange={(v) => handleRuleChange(rule.id, 'p1', v)}>
+                                <Label>Point 1 (End)</Label>
+                                <Select value={rule.p1} onValueChange={(v: KeypointName) => handleRuleChange(rule.id, 'p1', v)}>
                                     <SelectTrigger><SelectValue/></SelectTrigger>
                                     <SelectContent>
                                         {keypointOptions.map(kp => <SelectItem key={kp} value={kp}>{kp}</SelectItem>)}
@@ -186,8 +236,8 @@ export function AddPoseForm({ children, onAddPose }: AddPoseFormProps) {
                                 </Select>
                             </div>
                             <div>
-                                <Label>Center Point (p2)</Label>
-                                <Select value={rule.p2} onValueChange={(v) => handleRuleChange(rule.id, 'p2', v)}>
+                                <Label>Point 2 (Vertex)</Label>
+                                <Select value={rule.p2} onValueChange={(v: KeypointName) => handleRuleChange(rule.id, 'p2', v)}>
                                     <SelectTrigger><SelectValue/></SelectTrigger>
                                     <SelectContent>
                                         {keypointOptions.map(kp => <SelectItem key={kp} value={kp}>{kp}</SelectItem>)}
@@ -195,13 +245,19 @@ export function AddPoseForm({ children, onAddPose }: AddPoseFormProps) {
                                 </Select>
                             </div>
                             <div>
-                                <Label>Point 3 (p3)</Label>
-                                <Select value={rule.p3} onValueChange={(v) => handleRuleChange(rule.id, 'p3', v)}>
+                                <Label>Point 3 (End)</Label>
+                                <Select value={rule.p3} onValueChange={(v: KeypointName) => handleRuleChange(rule.id, 'p3', v)}>
                                     <SelectTrigger><SelectValue/></SelectTrigger>
                                     <SelectContent>
                                         {keypointOptions.map(kp => <SelectItem key={kp} value={kp}>{kp}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 mt-4">
+                             <div>
+                                <Label>Tolerance (°)</Label>
+                                <Input type="number" value={rule.tolerance} onChange={e => handleRuleChange(rule.id, 'tolerance', e.target.value)} />
                             </div>
                         </div>
                          <div className="mt-4 space-y-2">
@@ -214,7 +270,7 @@ export function AddPoseForm({ children, onAddPose }: AddPoseFormProps) {
                 ))}
             </div>
             <Button variant="outline" size="sm" onClick={handleAddRule} className="mt-4">
-                <PlusCircle className="mr-2 h-4 w-4" /> Add Angle Rule
+                <PlusCircle className="mr-2 h-4 w-4" /> Add Rule Manually
             </Button>
           </div>
         </div>

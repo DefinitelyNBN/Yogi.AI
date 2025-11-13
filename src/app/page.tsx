@@ -42,10 +42,14 @@ export default function Home() {
   const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
   const [generatedPlan, setGeneratedPlan] = useState('');
   const [breathingRate, setBreathingRate] = useState<number>(0);
-  const [isAddPoseOpen, setAddPoseOpen] = useState(false);
 
   const allPoses = { ...POSES, ...userPoses };
   const allPoseConfigs = { ...POSE_CONFIG, ...userPoseConfigs };
+  const allPoseImages = PlaceHolderImages.reduce((acc, img) => {
+    acc[img.id] = img;
+    return acc;
+  }, {} as Record<string, ImagePlaceholder>);
+
 
   const handlePoseSelection = (poseKey: string) => {
     if (poseKey === 'none') {
@@ -56,7 +60,7 @@ export default function Home() {
       const poseName = poseKey as PoseName;
       setSelectedPose(poseName);
 
-      const image = userPoseImages[poseName] || PlaceHolderImages.find((p) => p.id === poseName) || null;
+      const image = userPoseImages[poseName] || allPoseImages[poseName] || null;
       setSelectedPoseImage(image);
       setFeedbackList([]);
     }
@@ -119,6 +123,8 @@ export default function Home() {
       title: 'Pose Added!',
       description: `${name} has been added to your pose library.`,
     });
+    // Automatically select the new pose
+    handlePoseSelection(id);
   };
 
   return (
@@ -186,11 +192,11 @@ export default function Home() {
                 </div>
 
 
-                {selectedPoseImage && (
+                {selectedPoseImage && selectedPose && (
                   <div className="mt-4">
                     <Image
                       src={selectedPoseImage.imageUrl}
-                      alt={`Example of ${allPoses[selectedPose as PoseName].name} pose`}
+                      alt={`Example of ${allPoses[selectedPose]?.name} pose`}
                       width={600}
                       height={400}
                       className="rounded-md object-cover"

@@ -1,6 +1,7 @@
 'use server';
 import { generateYogaPlan, GenerateYogaPlanInput } from '@/ai/flows/personalized-yoga-plans';
 import { audioFeedbackForPoseCorrection, AudioFeedbackForPoseCorrectionInput } from '@/ai/flows/audio-feedback-pose-correction';
+import { generatePoseRules, GeneratePoseRulesInput, GeneratePoseRulesOutput } from '@/ai/flows/generate-pose-rules';
 
 export async function getYogaPlan(input: GenerateYogaPlanInput) {
     try {
@@ -19,5 +20,15 @@ export async function getAudioFeedback(input: AudioFeedbackForPoseCorrectionInpu
     } catch (error) {
         console.error('Error generating audio feedback:', error);
         return { success: false, error: 'Failed to generate audio feedback.' };
+    }
+}
+
+export async function getAIPoseRules(input: GeneratePoseRulesInput): Promise<{ success: boolean, rules?: GeneratePoseRulesOutput['rules'], error?: string }> {
+    try {
+        const result = await generatePoseRules(input);
+        return { success: true, rules: result.rules };
+    } catch (error) {
+        console.error('Error generating AI pose rules:', error);
+        return { success: false, error: 'Failed to generate AI rules. Please try again.' };
     }
 }
