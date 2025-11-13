@@ -4,7 +4,7 @@ import { FilesetResolver, PoseLandmarker, DrawingUtils } from '@mediapipe/tasks-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from "@/hooks/use-toast";
-import { Keypoint, PoseName, KEYPOINTS_MAPPING } from '@/lib/pose-constants';
+import { Keypoint, CustomPoseConfig, KEYPOINTS_MAPPING } from '@/lib/pose-constants';
 import { analyzePose } from '@/lib/pose-analyzer';
 import { getAudioFeedback } from '@/app/actions';
 import { Loader, Video, VideoOff, Info, X } from 'lucide-react';
@@ -13,17 +13,17 @@ const VIDEO_WIDTH = 640;
 const VIDEO_HEIGHT = 480;
 const BREATHING_WINDOW_SECONDS = 10; // Analyze breathing over a 10-second window
 const FPS = 30; // Assuming a target FPS for calculations
-const BREATHING_SAMPLES = BREATHING_WINDOW_SECONDS * FPS;
 
 type AppState = 'initial' | 'loading' | 'detecting' | 'error' | 'permission_denied';
 
 type YogiAiClientProps = {
-  selectedPose: PoseName | null;
+  selectedPose: string | null;
+  poseConfig?: CustomPoseConfig;
   onFeedbackChange: (feedback: string[]) => void;
   onBreathingUpdate: (rate: number) => void;
 };
 
-export function YogiAiClient({ selectedPose, onFeedbackChange, onBreathingUpdate }: YogiAiClientProps) {
+export function YogiAiClient({ selectedPose, poseConfig, onFeedbackChange, onBreathingUpdate }: YogiAiClientProps) {
   const { toast } = useToast();
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -211,8 +211,8 @@ export function YogiAiClient({ selectedPose, onFeedbackChange, onBreathingUpdate
 
         analyzeBreathing(keypoints as Keypoint[], startTimeMs);
 
-        if (selectedPose) {
-          const newFeedback = analyzePose(keypoints as Keypoint[], selectedPose);
+        if (selectedPose && poseConfig) {
+          const newFeedback = analyzePose(keypoints as Keypoint[], poseConfig);
           onFeedbackChange(newFeedback);
 
           const isAllGood = newFeedback.every(f => f.includes('good') || f.includes('perfect'));
@@ -232,7 +232,7 @@ export function YogiAiClient({ selectedPose, onFeedbackChange, onBreathingUpdate
       }
     }
     animationFrameId.current = requestAnimationFrame(detectPoseLoop);
-  }, [appState, selectedPose, poseLandmarker, onFeedbackChange, handleAudioFeedback, analyzeBreathing]);
+  }, [appState, selectedPose, poseConfig, poseLandmarker, onFeedbackChange, handleAudioFeedback, analyzeBreathing]);
 
   useEffect(() => {
     if (appState === 'detecting') {

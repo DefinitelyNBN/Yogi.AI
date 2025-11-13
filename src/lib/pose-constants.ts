@@ -15,7 +15,7 @@ export const POSES = {
   Bound_Angle: { id: 'Bound_Angle', name: 'Bound Angle Pose' },
 } as const;
 
-export type PoseName = keyof typeof POSES;
+export type PoseName = keyof typeof POSES | (string & {});
 
 // Keypoint indices from MediaPipe Pose
 export const KEYPOINTS_MAPPING = {
@@ -35,7 +35,9 @@ export const KEYPOINTS_MAPPING = {
   'left_ankle': 27, 'right_ankle': 28,
   'left_heel': 29, 'right_heel': 30,
   'left_foot_index': 31, 'right_foot_index': 32
-};
+} as const;
+
+export type KeypointName = keyof typeof KEYPOINTS_MAPPING;
 
 type AngleConfig = {
   p1: number;
@@ -48,7 +50,9 @@ type AngleConfig = {
   feedback_good: string;
 };
 
-export const POSE_CONFIG: Record<PoseName, Record<string, AngleConfig>> = {
+export type CustomPoseConfig = Record<string, AngleConfig>;
+
+export const POSE_CONFIG: Record<keyof typeof POSES, CustomPoseConfig> = {
   Tree: {
     standingKnee: {
       p1: KEYPOINTS_MAPPING.right_hip, p2: KEYPOINTS_MAPPING.right_knee, p3: KEYPOINTS_MAPPING.right_ankle,

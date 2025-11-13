@@ -1,4 +1,4 @@
-import { POSE_CONFIG, Keypoint, PoseName, KEYPOINTS_MAPPING } from './pose-constants';
+import { Keypoint, CustomPoseConfig } from './pose-constants';
 
 function calculateAngle(p1: Keypoint, p2: Keypoint, p3: Keypoint): number {
   if (!p1 || !p2 || !p3) return 0;
@@ -13,9 +13,8 @@ function calculateAngle(p1: Keypoint, p2: Keypoint, p3: Keypoint): number {
 }
 
 
-export function analyzePose(keypoints: Keypoint[], poseName: PoseName): string[] {
+export function analyzePose(keypoints: Keypoint[], targetAngles: CustomPoseConfig): string[] {
   const feedback: string[] = [];
-  const targetAngles = POSE_CONFIG[poseName];
 
   const poseScore = keypoints.reduce((acc, kp) => acc + (kp.score ?? 0), 0) / keypoints.length;
   if (!targetAngles || poseScore < 0.3) {

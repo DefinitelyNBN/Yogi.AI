@@ -2,10 +2,11 @@
 
 import dynamic from 'next/dynamic';
 import { Skeleton } from '@/components/ui/skeleton';
-import { PoseName } from '@/lib/pose-constants';
+import { PoseName, CustomPoseConfig } from '@/lib/pose-constants';
 
 export type YogiAiClientProps = {
   selectedPose: PoseName | null;
+  poseConfig?: CustomPoseConfig;
   onFeedbackChange: (feedback: string[]) => void;
   onBreathingUpdate: (rate: number) => void;
 };

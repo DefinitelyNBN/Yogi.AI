@@ -24,12 +24,17 @@ import { getYogaPlan } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Icons } from '@/components/icons';
-import { POSES, PoseName } from '@/lib/pose-constants';
-import { CheckCircle, Info, Loader, Volume2, Waves } from 'lucide-react';
+import { POSES, PoseName, POSE_CONFIG, CustomPoseConfig } from '@/lib/pose-constants';
+import { CheckCircle, Info, Loader, PlusCircle, Volume2, Waves } from 'lucide-react';
 import { PlaceHolderImages, ImagePlaceholder } from '@/lib/placeholder-images';
+import { AddPoseForm } from '@/components/add-pose-form';
 
 export default function Home() {
   const { toast } = useToast();
+  const [userPoses, setUserPoses] = useState<Record<string, { id: string; name: string }>>({});
+  const [userPoseConfigs, setUserPoseConfigs] = useState<Record<string, CustomPoseConfig>>({});
+  const [userPoseImages, setUserPoseImages] = useState<Record<string, ImagePlaceholder>>({});
+
   const [selectedPose, setSelectedPose] = useState<PoseName | null>(null);
   const [selectedPoseImage, setSelectedPoseImage] = useState<ImagePlaceholder | null>(null);
   const [feedbackList, setFeedbackList] = useState<string[]>([]);
@@ -37,6 +42,10 @@ export default function Home() {
   const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
   const [generatedPlan, setGeneratedPlan] = useState('');
   const [breathingRate, setBreathingRate] = useState<number>(0);
+  const [isAddPoseOpen, setAddPoseOpen] = useState(false);
+
+  const allPoses = { ...POSES, ...userPoses };
+  const allPoseConfigs = { ...POSE_CONFIG, ...userPoseConfigs };
 
   const handlePoseSelection = (poseKey: string) => {
     if (poseKey === 'none') {
@@ -46,7 +55,8 @@ export default function Home() {
     } else {
       const poseName = poseKey as PoseName;
       setSelectedPose(poseName);
-      const image = PlaceHolderImages.find((p) => p.id === poseName) ?? null;
+
+      const image = userPoseImages[poseName] || PlaceHolderImages.find((p) => p.id === poseName) || null;
       setSelectedPoseImage(image);
       setFeedbackList([]);
     }
@@ -94,6 +104,23 @@ export default function Home() {
     }
   };
 
+  const handleAddPose = (newPose: {
+    name: string;
+    id: string;
+    description: string;
+    imageUrl: string;
+    config: CustomPoseConfig;
+  }) => {
+    const { id, name, description, imageUrl, config } = newPose;
+    setUserPoses(prev => ({ ...prev, [id]: { id, name } }));
+    setUserPoseConfigs(prev => ({ ...prev, [id]: config }));
+    setUserPoseImages(prev => ({ ...prev, [id]: { id, description, imageUrl, imageHint: name.toLowerCase() } }));
+    toast({
+      title: 'Pose Added!',
+      description: `${name} has been added to your pose library.`,
+    });
+  };
+
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -110,6 +137,7 @@ export default function Home() {
           <div className="lg:col-span-2">
             <YogiAiLoader
               selectedPose={selectedPose}
+              poseConfig={selectedPose ? allPoseConfigs[selectedPose] : undefined}
               onFeedbackChange={handleFeedbackChange}
               onBreathingUpdate={setBreathingRate}
             />
@@ -135,25 +163,34 @@ export default function Home() {
                 <CardDescription>Select a pose to get live feedback.</CardDescription>
               </CardHeader>
               <CardContent>
-                <Select onValueChange={handlePoseSelection} value={selectedPose || 'none'}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a Pose" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
-                    {Object.entries(POSES).map(([key, pose]) => (
-                      <SelectItem key={key} value={key}>
-                        {pose.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="flex gap-2">
+                  <Select onValueChange={handlePoseSelection} value={selectedPose || 'none'} >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a Pose" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
+                      {Object.entries(allPoses).map(([key, pose]) => (
+                        <SelectItem key={key} value={key}>
+                          {pose.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <AddPoseForm onAddPose={handleAddPose}>
+                    <Button variant="outline" size="icon">
+                      <PlusCircle className="h-4 w-4" />
+                      <span className="sr-only">Add New Pose</span>
+                    </Button>
+                  </AddPoseForm>
+                </div>
+
 
                 {selectedPoseImage && (
                   <div className="mt-4">
                     <Image
                       src={selectedPoseImage.imageUrl}
-                      alt={`Example of ${POSES[selectedPose as PoseName].name} pose`}
+                      alt={`Example of ${allPoses[selectedPose as PoseName].name} pose`}
                       width={600}
                       height={400}
                       className="rounded-md object-cover"
