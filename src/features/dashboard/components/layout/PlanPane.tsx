@@ -35,7 +35,7 @@ export function PlanPane({
   generatedPlan,
 }: PlanPaneProps) {
   return (
-    <Card>
+    <div className="h-full">
       <CardHeader>
         <CardTitle>Personalized Plan</CardTitle>
         <CardDescription>
@@ -74,6 +74,6 @@ export function PlanPane({
           </Alert>
         )}
       </CardContent>
-    </Card>
+    </div>
   );
 }

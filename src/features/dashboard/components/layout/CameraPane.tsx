@@ -8,11 +8,19 @@
  */
 'use client';
 import { PoseCorrectionLoader, PoseCorrectionLoaderProps } from '@/features/pose-correction/components/PoseCorrectionLoader';
+import { Card, CardContent } from '@/components/ui/card';
+
 
 /**
  * Renders the top-left pane of the dashboard, which contains the camera feed and pose analysis.
  * @param props The properties required by the underlying PoseCorrectionLoader component.
  */
 export function CameraPane(props: PoseCorrectionLoaderProps) {
-  return <PoseCorrectionLoader {...props} />;
+  return (
+      <Card className="h-full w-full flex flex-col">
+          <CardContent className="p-0 flex-1">
+             <PoseCorrectionLoader {...props} />
+          </CardContent>
+      </Card>
+  )
 }

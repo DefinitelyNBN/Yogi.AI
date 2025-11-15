@@ -3,8 +3,6 @@
  * control center for the user to interact with the pose correction feature.
  *
  * It includes:
- * - A dropdown to select a yoga pose.
- * - A button to add a new custom pose.
  * - An image and description of the selected pose.
  * - A real-time accuracy progress bar.
  * - A list of feedback messages from the AI.
@@ -13,49 +11,24 @@
 import React from 'react';
 import Image from 'next/image';
 import {
-  Card,
   CardContent,
   CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
-import { AddPoseForm } from '@/features/custom-poses/components/AddPoseForm';
-import { PoseName, CustomPoseConfig } from '@/lib/pose-constants';
+import { PoseName } from '@/lib/pose-constants';
 import { ImagePlaceholder } from '@/lib/placeholder-images';
 import {
   CheckCircle,
   Info,
-  PlusCircle,
-  Trash2,
   Volume2,
 } from 'lucide-react';
 
 interface PoseAnalysisPaneProps {
-  // Props for pose selection
-  allPoses: Record<string, { id: string; name: string }>;
-  userPoses: Record<string, { id: string; name: string }>;
-  selectedPose: PoseName | null;
-  handlePoseSelection: (poseKey: string) => void;
-  handleRemovePose: (poseId: string) => void;
-  onAddPose: (newPose: {
-    name: string;
-    id: string;
-    description: string;
-    imageUrl: string;
-    config: CustomPoseConfig;
-  }) => void;
-
   // Props for displaying analysis results
+  selectedPose: PoseName;
   selectedPoseImage: ImagePlaceholder | null;
   feedbackList: string[];
   poseAccuracy: number;
@@ -65,75 +38,24 @@ interface PoseAnalysisPaneProps {
  * Renders the top-right pane of the dashboard, containing all pose analysis controls and feedback.
  */
 export function PoseAnalysisPane({
-  allPoses,
-  userPoses,
   selectedPose,
-  handlePoseSelection,
-  handleRemovePose,
-  onAddPose,
   selectedPoseImage,
   feedbackList,
   poseAccuracy,
 }: PoseAnalysisPaneProps) {
   return (
-    <Card className="h-full">
+    <div className="h-full">
       <CardHeader>
         <CardTitle>Pose Analysis</CardTitle>
-        <CardDescription>Select a pose to get live feedback.</CardDescription>
+        <CardDescription>Live feedback on your form and accuracy.</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="flex gap-2">
-          {/* POSE SELECTION DROPDOWN */}
-          <Select
-            onValueChange={handlePoseSelection}
-            value={selectedPose || 'none'}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select a Pose" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">None</SelectItem>
-              {Object.entries(allPoses).map(([key, pose]) => (
-                <SelectItem key={key} value={key}>
-                  <div className="flex items-center justify-between w-full">
-                    <span>{pose.name}</span>
-                    {/* Show remove button only for custom user-added poses */}
-                    {userPoses[key] && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 ml-4 hover:bg-destructive/20"
-                        onClick={(e) => {
-                          e.stopPropagation(); // Prevent dropdown from closing
-                          e.preventDefault(); // Prevent selection
-                          handleRemovePose(key);
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                        <span className="sr-only">Remove {pose.name}</span>
-                      </Button>
-                    )}
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {/* ADD NEW POSE BUTTON & DIALOG */}
-          <AddPoseForm onAddPose={onAddPose}>
-            <Button variant="outline" size="icon">
-              <PlusCircle className="h-4 w-4" />
-              <span className="sr-only">Add New Pose</span>
-            </Button>
-          </AddPoseForm>
-        </div>
-
         {/* REFERENCE IMAGE for the selected pose */}
         {selectedPoseImage && selectedPose && (
           <div className="mt-4">
             <Image
               src={selectedPoseImage.imageUrl}
-              alt={`Example of ${allPoses[selectedPose]?.name} pose`}
+              alt={`Example of ${selectedPose} pose`}
               width={600}
               height={400}
               className="rounded-md object-cover aspect-video"
@@ -214,6 +136,6 @@ export function PoseAnalysisPane({
           <span>Audio feedback is enabled for corrections.</span>
         </div>
       </CardFooter>
-    </Card>
+    </div>
   );
 }

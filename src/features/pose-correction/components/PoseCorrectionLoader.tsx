@@ -24,7 +24,6 @@ export type PoseCorrectionLoaderProps = {
   poseConfig?: CustomPoseConfig;
   onFeedbackChange: (feedback: string[]) => void;
   onAccuracyChange: (accuracy: number) => void;
-  onBreathingUpdate: (rate: number) => void;
   photoDataUri?: string;
 };
 
