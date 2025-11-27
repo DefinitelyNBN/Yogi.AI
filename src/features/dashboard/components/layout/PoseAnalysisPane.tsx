@@ -1,4 +1,4 @@
-/**
+/** Checked
  * @fileoverview This component represents the "Pose Analysis" pane. It's the main
  * control center for the user to interact with the pose correction feature.
  *
